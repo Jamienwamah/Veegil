@@ -6,7 +6,7 @@ import uuid
 class Deposit(models.Model):
     user = models.ForeignKey(User, related_name='deposit', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    account_number = models.UUIDField(default=uuid.uuid4())
+    account_number = models.UUIDField(default=uuid.uuid4)
     type = models.CharField(max_length=20, default='deposit')
     timestamp = models.DateTimeField(default=timezone.now)
 

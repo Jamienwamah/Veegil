@@ -1,0 +1,41 @@
+image: node:16
+
+stages:
+  - build
+  - test
+  - deploy
+
+frontend_build:
+  stage: build
+  script:
+    - cd frontend
+    - npm install
+    - npm run build
+
+frontend_test:
+  stage: test
+  script:
+    - cd frontend
+    - npm test
+
+frontend_deploy:
+  stage: deploy
+  script:
+    - cd frontend
+    - npm install
+    - npm run build
+    - npm run lint
+    - next start
+  environment:
+    name: production
+
+
+build_image:
+  stage: build
+  image: docker:stable
+  services:
+    - docker:dind
+  script:
+    - docker info
+    - docker build -t bank .
+    - docker run bank /script/to/run/tests

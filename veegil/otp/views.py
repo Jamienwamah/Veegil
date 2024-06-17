@@ -22,7 +22,7 @@ class RegisterUserView(APIView):
                 otp = OTP.objects.create(user=user, otp_expires_at=timezone.now() + timezone.timedelta(minutes=5))
                 subject = "Email Verified Successfully"
                 message = f"Hi {user.username}, this one time otp code: {otp.otp_code}. is a confirmation that your email has been successfully verified. Please proceed to login "
-                from_email = "rentspacedev@gmail.com"
+                from_email = "ikechukwuarinze614@gmail.com"
                 recipient = [user.email]
                 
                 send_mail(
@@ -55,6 +55,9 @@ def verify_otp(request):
         except json.JSONDecodeError:
             logger.error("Invalid JSON data")
             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+        except KeyError:
+            logger.error("Missing 'otp' key in JSON data")
+            return JsonResponse({'error': "Missing 'otp' key in JSON data"}, status=400)
         
         if submitted_otp:
             try:

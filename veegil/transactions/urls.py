@@ -5,5 +5,5 @@ from . import views
 
 urlpatterns = [
     path('transaction-history/', views.transaction_history, name='transaction_history'),
-    path('transhistorygraphql/', GraphQLView.as_view(graphiql=True, schema=schema)),
+    path('transactionhistorygraphql/', GraphQLView.as_view(graphiql=True, schema=schema)),
 ]

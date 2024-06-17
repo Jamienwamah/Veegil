@@ -1,24 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
-from django.core.validators import RegexValidator
+from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin)
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import RegexValidator
+from .managers import UserManager
 import uuid
 
-class CustomAppUserManager(BaseUserManager):
-    def create_user(self, username, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError(_('The Email field must be set'))
-        email = self.normalize_email(email)
-        user = self.model(username=username, email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, username, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        return self.create_user(username, email, password, **extra_fields)
-
+ 
 class User(AbstractBaseUser, PermissionsMixin):
     GENDER_CHOICES = [
         (1, 'Male'),
@@ -32,34 +20,38 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     email_verified = models.BooleanField(default=False)
     verification_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    date_of_birth = models.DateField(verbose_name=_('Date of Birth'), null=True, blank=True)
+    phone_number_regex = RegexValidator(
+        regex=r'^[1-9]\d{9}$', message=_("Phone number must start with a digit other than 0 and have a length of 10 digits."))
+    phone_number = models.CharField(validators=[
+        phone_number_regex], max_length=15, unique=True, verbose_name=_('Phone Number'), blank=True)
     password = models.CharField(max_length=255, verbose_name=_('Password'), blank=True)
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
-    residential_address = models.TextField(verbose_name=_('Residential Address'), blank=True)
-    referral_code = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Referral Code'))
-    wallet_address = models.CharField(max_length=36, blank=True, null=True, unique=True)
-
-    is_active = models.BooleanField(default=True)
+    password2 = models.CharField(max_length=255, verbose_name=_('Password2'), blank=True)
+    gender = models.CharField(
+        max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
+    residential_address = models.TextField(
+        verbose_name=_('Residential Address'), blank=True)
     is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
+    
+    
 
-    account_number = models.CharField(max_length=15, unique=True, verbose_name=_('Account Number'), blank=True, default=uuid.uuid4())
-
-    objects = CustomAppUserManager()
+    objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
-
-    groups = models.ManyToManyField(Group, related_name='customappuser_groups', blank=True)
-    user_permissions = models.ManyToManyField(Permission, related_name='custom_app_user_permissions', blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.id:
-            self.account_number = self.generate_account_number()
-        super().save(*args, **kwargs)
-
-    def generate_account_number(self):
-        # Generate a unique account number based on UUID
-        return uuid.uuid4().hex[:10]
-
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'phone_number', 'password', 'password2']
+    
+    objects = UserManager()
+    
     def __str__(self):
-        return self.username
+        return "%s"%(self.email)
+    
+    @property
+    def get_full_name(self):
+        return f"{self.first_name}, {self.last_name}"
+    
+    def tokens(self):
+        pass
+    
+    

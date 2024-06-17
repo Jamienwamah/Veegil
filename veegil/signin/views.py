@@ -1,35 +1,36 @@
-from django.http import JsonResponse
-from rest_framework.response import Response
-from rest_framework import status
-from .models import AccessToken, RefreshToken
-from .serializers import AccessTokenSerializer, RefreshTokenSerializer
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from signup.models import User
 from django.contrib.auth import authenticate
+from rest_framework.permissions import AllowAny
+from django.shortcuts import render
+from rest_framework import generics, status
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from signup.serializers import UserSerializer
+from .tokens import create_jwt_pair_for_user
 
 
-#Create views here
 
 class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        
-        if user:
-            refresh = RefreshToken.for_user(user)
-            access = refresh.access_token
-            
-            AccessToken.objects.create(user=user, token=str(access))
-            RefreshToken.objects.create(user=user, token=str(refresh))
-            
-            access_serializers = AccessTokenSerializers(access)
-            refresh_serializers = RefreshTokenSerializer(refresh)
-        
-            return JsonResponse({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token)
-            })
+    permission_classes = [AllowAny,]
+
+    def post(self, request: Request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        user = authenticate(email=email, password=password)
+
+        if user is not None:
+
+            tokens = create_jwt_pair_for_user(user)
+
+            response = {"message": "Login Successfull", "tokens": tokens}
+            return Response(data=response, status=status.HTTP_200_OK)
+
         else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(data={"message": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def get(self, request: Request):
+        content = {"user": str(request.user), "auth": str(request.auth)}
+
+        return Response(data=content, status=status.HTTP_200_OK)

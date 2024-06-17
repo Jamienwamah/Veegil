@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import Transaction
+from .models import TransactionHistory
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Transaction
+        model = TransactionHistory
         fields = '__all__'

@@ -1,0 +1,10 @@
+services:
+  - name: web
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn Nextserve.wsgi --bind 0.0.0.0:$PORT"
+  - name: static
+    env: static
+    buildCommand: "./build.sh"
+    staticDirs:
+      - staticfiles
